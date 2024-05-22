@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Text;
 using System.Text.Json;
 using FluentResults;
 
@@ -10,11 +12,22 @@ public class JsonSerializer : ISerializer
         throw new NotImplementedException();
     }
 
+    public async Task<Result<T>> DeserializeAsync<T>(string textJson, CancellationToken ct = default!)
+    {
+        var bytes = Encoding.UTF8.GetBytes(textJson);
+        Stream stream = new MemoryStream(bytes);
+
+        return await DeserializeAsync<T>(stream,ct);
+    }
+
     public async Task<Result<T>> DeserializeAsync<T>(Stream stream,CancellationToken ct = default!)
     {
         try
         {
-            var deserialized = await System.Text.Json.JsonSerializer.DeserializeAsync<T>(stream,JsonSerializerOptions.Default, ct);
+            var deserialized = await System.Text.Json.JsonSerializer.DeserializeAsync<T>(stream, new JsonSerializerOptions
+            {
+                Converters = { new DateTimeConverter() }
+            }, ct);
 
             if (deserialized is null)
             {

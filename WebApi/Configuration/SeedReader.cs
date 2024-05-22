@@ -1,5 +1,6 @@
 using System.Text;
 using Core.Serializer;
+using FluentResults;
 
 namespace WebApi.Configuration;
 
@@ -13,7 +14,7 @@ public class SeedReader : ISeedReader
     }
     public const int BufferSize = 4096;
     
-    public async Task<string> ReadFileAsync(string filePath)
+    public async Task<Result<T>> ReadFileAsync<T>(string filePath,CancellationToken ct = default!)
     {
         var sb = new StringBuilder();
         await using var sourceStream =
@@ -27,9 +28,18 @@ public class SeedReader : ISeedReader
         
         while ((numRead = await sourceStream.ReadAsync(buffer,0,BufferSize)) != 0)
         {
-            string text = Encoding.Unicode.GetString(buffer, 0,numRead);
+            string text = Encoding.UTF8.GetString(buffer, 0,numRead);
             sb.Append(text);
         }
-        return sb.ToString();
+
+        var deserializedResult = await _serializer.DeserializeAsync<T>(sb.ToString(),ct);
+        if (deserializedResult.IsFailed)
+        {
+            return Result.Fail(deserializedResult.Errors);
+        }
+
+        var deserialized = deserializedResult.Value;
+        
+        return Result.Ok(deserialized);
     }
 }

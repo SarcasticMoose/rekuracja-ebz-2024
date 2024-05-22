@@ -8,19 +8,26 @@ public class DataContext(DbContextOptions<DataContext> options) : DbContext(opti
 {
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .Entity<User>()
-            .HasKey(x => x.Id);
-
-        modelBuilder
-            .Entity<User>()
-            .HasOne<Gender>(x => x.Gender)
-            .WithOne(g => g.User)
-            .HasForeignKey<Gender>();
+        modelBuilder.Entity<UserEntity>(eb =>
+        {
+            eb.HasKey(x => x.Id);
+            eb.HasOne<GenderEntity>(x => x.Gender)
+                .WithOne(g => g.User)
+                .HasForeignKey<GenderEntity>();
+            
+        });
+        
+        modelBuilder.Entity<GenderEntity>(eb =>
+        {
+            eb.HasKey(x => x.Id);
+        });
+            
+        
+        
         
         base.OnModelCreating(modelBuilder);
     }
 
-    public DbSet<User> Users => Set<User>();
-    public DbSet<Gender> Genders => Set<Gender>();
+    public DbSet<UserEntity> Users => Set<UserEntity>();
+    public DbSet<GenderEntity> Genders => Set<GenderEntity>();
 }
