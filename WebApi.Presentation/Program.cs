@@ -49,6 +49,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddCors();
 builder.Services.AddDatabaseContext(builder);
 builder.Services.AddJwtAuthentication();
 builder.Services.ConfigureOptions<JwtBearerOptionsSetup>();
@@ -73,6 +74,12 @@ if (app.Environment.IsDevelopment())
 await using var scope = app.Services.CreateAsyncScope();
 var databaseCreator = scope.ServiceProvider.GetRequiredService<DatabaseLuncher>();
 await databaseCreator.Startup(default!);
+
+app.UseCors(x => x
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials()
+    .SetIsOriginAllowed(origin => true));// Allow any origin  
 
 app.UseAuthentication();
 app.UseAuthorization();
