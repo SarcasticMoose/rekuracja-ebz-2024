@@ -2,11 +2,14 @@ using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
 using FluentResults;
+using Microsoft.Extensions.Options;
 
 namespace Core.Serializer;
 
-public class JsonSerializer(JsonSerializerOptions jsonSerializerOptions = default!) : ISerializer
+public class JsonSerializer(JsonSerializerOptions jsonOptions) : ISerializer
 {
+    private readonly JsonSerializerOptions _jsonOptions = jsonOptions;
+
     public Task<Result<string>> SerializeAsync<T>(T objectToSerialize,CancellationToken ct = default!)
     {
         throw new NotImplementedException();
@@ -24,7 +27,7 @@ public class JsonSerializer(JsonSerializerOptions jsonSerializerOptions = defaul
     {
         try
         {
-            var deserialized = await System.Text.Json.JsonSerializer.DeserializeAsync<T>(stream, jsonSerializerOptions, ct);
+            var deserialized = await System.Text.Json.JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions, ct);
 
             if (deserialized is null)
             {

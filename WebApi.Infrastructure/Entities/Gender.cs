@@ -7,5 +7,6 @@ public class Gender
     public int Id { get; set; }
     public GenderNames Name { get; set; }
 
-    public ICollection<User> Users { get; set; } = new List<User>();
+    //Relations
+    public ICollection<UserDetails> Users { get; set; } = new List<UserDetails>();
 }
