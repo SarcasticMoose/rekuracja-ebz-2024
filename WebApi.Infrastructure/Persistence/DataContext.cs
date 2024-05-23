@@ -11,11 +11,20 @@ public class DataContext(DbContextOptions<DataContext> options) : DbContext(opti
         {
             eb
                 .HasKey(x => x.Id);
-            eb
-                .HasOne<Gender>(x => x.Gender)
-                .WithMany(g => g.Users);
+            eb.HasOne<UserDetails>(x => x.UserDetails)
+                .WithOne(x => x.User)
+                .HasForeignKey<UserDetails>(x => x.UserId);
         });
         base.OnModelCreating(modelBuilder);
+        
+        modelBuilder.Entity<UserDetails>(eb =>
+            {
+                eb
+                    .HasKey(x => x.Id);
+                eb
+                    .HasOne<Gender>(x => x.Gender)
+                    .WithMany(g => g.Users);
+            });
     }
 
     public DbSet<User> Users => Set<User>();

@@ -26,16 +26,6 @@ public class FileReader(ISerializer serializer) : IFileReader
             string text = Encoding.UTF8.GetString(buffer, 0,numRead);
             sb.Append(text);
         }
-
-        /*
-        var deserializedResult = await serializer.DeserializeAsync<T>(sb.ToString(),ct);
-        if (deserializedResult.IsFailed)
-        {
-            return Result.Fail(deserializedResult.Errors);
-        }
-
-        var deserialized = deserializedResult.Value;
-        */
         
         return Result.Ok(sb.ToString());
     }

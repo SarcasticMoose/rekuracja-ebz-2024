@@ -1,73 +1,80 @@
 ﻿using Core.Serializer;
+using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Configuration;
 using WebApi.Domain.Models;
+using WebApi.Infrastructure.Auth.Hashing;
+using WebApi.Infrastructure.Entities;
 using WebApi.Infrastructure.Persistence;
 
 namespace WebApi.Infrastructure.Utils;
 
-public class DatabaseLuncher(DataContext dataContext, IFileReader fileReader, ISerializer serializer) : IDatabaseLuncher
+public class DatabaseLuncher(DataContext dataContext, IFileReader fileReader, ISerializer serializer, IHashService hashService) : IDatabaseLuncher
 {
-    public async Task Startup(CancellationToken ct)
+    public async Task<Result> Startup(CancellationToken ct)
     {
-        if (await IsDatabaseExists())
+        if (!await IsDatabaseExists())
         {
-            await dataContext.Database.MigrateAsync();
-        }
+            await dataContext.Database.MigrateAsync(cancellationToken: ct);
+        } 
 
         if (IsUserTableIsEmpty())
         {
-            var readedSeedFileResult = await fileReader.ReadFileAsyncToString("Seed/data_seed.json", ct);
+            var readedSeedFileResult = await fileReader.ReadFileAsyncToString(filePath: $"../WebApi.Infrastructure/Seed/data_seed.json", ct: ct);
         
             if (readedSeedFileResult.IsFailed)
             {
-                throw new NotImplementedException();
+                return Result.Fail(readedSeedFileResult.Errors);
             }
 
             var readedSeedFile = readedSeedFileResult.Value;
 
-            var deserializedSeedFromFileResult = await serializer.DeserializeAsync<IList<User>>(readedSeedFile,ct);
+            var deserializedSeedFromFileResult = await serializer.DeserializeAsync<IList<UserDto>>(readedSeedFile,ct);
             
             if (deserializedSeedFromFileResult.IsFailed)
             {
-                throw new NotImplementedException();
+                return Result.Fail(deserializedSeedFromFileResult.Errors);
             }
             
             var deserializedSeed = deserializedSeedFromFileResult.Value;
             
             if (deserializedSeed is null)
             {
-                throw new NotImplementedException();
+                return Result.Fail(new Error("Deserialized seed is null"));
             }
         
             var genders = deserializedSeed
                 .Select(x => x.Gender)
                 .Distinct()
-                .Select(x =>
+                .Select(x => new Gender()
                 {
-                    return new WebApi.Infrastructure.Entities.Gender()
-                    {
-                        Name = x
-                    };
+                    Name = x
                 })
                 .ToList();
             
             await dataContext.Users.AddRangeAsync(deserializedSeed.Select(x => new WebApi.Infrastructure.Entities.User()
             {
-                City = x.City,
-                Country = x.Country,
-                Created = x.Created,
-                Description = x.Description,
-                Gender = genders.First(y => y.Name == x.Gender),
-                Interests = x.Interests,
-                Skills = x.Skills,
                 Username = x.Username,
-                LastActive = x.LastActive,
-                DateOfBirth = x.DateOfBirth
+                Password = hashService.Hash("1234567"),
+                UserDetails = new UserDetails()
+                {
+                    City = x.City,
+                    Country = x.Country,
+                    Created = x.Created,
+                    Description = x.Description,
+                    Gender = genders.First(y => y.Name == x.Gender),
+                    Interests = x.Interests,
+                    Skills = x.Skills,
+                    LastActive = x.LastActive,
+                    DateOfBirth = x.DateOfBirth
+                }
             }), cancellationToken: ct);
             
             await dataContext.SaveChangesAsync(ct);
+            return Result.Ok();
         }
+        
+        return Result.Ok();
     }
     private async Task<bool> IsDatabaseExists()
     {
@@ -79,5 +86,4 @@ public class DatabaseLuncher(DataContext dataContext, IFileReader fileReader, IS
     {
         return !dataContext.Users.Any();
     }
-    
 }

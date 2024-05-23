@@ -37,6 +37,25 @@ namespace WebApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("WebApi.Infrastructure.Entities.UserDetails", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("City")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -69,18 +88,20 @@ namespace WebApi.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.HasIndex("GenderId");
 
-                    b.ToTable("Users");
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserDetails");
                 });
 
-            modelBuilder.Entity("WebApi.Infrastructure.Entities.User", b =>
+            modelBuilder.Entity("WebApi.Infrastructure.Entities.UserDetails", b =>
                 {
                     b.HasOne("WebApi.Infrastructure.Entities.Gender", "Gender")
                         .WithMany("Users")
@@ -88,12 +109,26 @@ namespace WebApi.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("WebApi.Infrastructure.Entities.User", "User")
+                        .WithOne("UserDetails")
+                        .HasForeignKey("WebApi.Infrastructure.Entities.UserDetails", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Gender");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WebApi.Infrastructure.Entities.Gender", b =>
                 {
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("WebApi.Infrastructure.Entities.User", b =>
+                {
+                    b.Navigation("UserDetails")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

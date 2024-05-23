@@ -1,16 +1,13 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using WebApi.Domain.Enums;
 
 namespace WebApi.Domain.Models;
 
-public class User
+public class CreateUserDto
 {
-    public int Id { get; set; }
-    [JsonPropertyName("UserName")]
     public string Username { get; set; } = string.Empty;
-    [JsonPropertyName("Gender")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public GenderNames Gender { get; set; } = new();
+    public string Password { get; set; } = string.Empty;
+    public GenderNames Gender { get; set; } 
     public DateOnly DateOfBirth { get; set; }
     public DateTime Created { get; set; }
     public DateTime LastActive { get; set; }
