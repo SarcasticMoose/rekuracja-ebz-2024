@@ -1,0 +1,80 @@
+﻿@page "/login"
+@using Blazored.LocalStorage
+@using Core.DataAccess
+@using Core.Models
+@using FluentResults
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IRestApiService Rest;
+@inject IDataAccess Refit;
+@inject ILocalStorageService _localStorage
+@inject AuthenticationStateProvider _authStateProvider
+@inject NavigationManager Navigation
+
+<MudGrid Justify="Justify.Center" Class="d-flex flex-row">
+    <MudItem>
+        <MudPaper Class="pa-4">
+            <MudForm @ref="_form" @bind-IsValid="@_success" @bind-Errors="@_errors">
+                <MudTextField T="string"
+                              @bind-Value="@_userLoginDto.Username"
+                              Label="Login"
+                              Required="true"
+                              RequiredError="User name is required!"/>
+                <MudTextField T="string"
+                              @bind-Value="@_userLoginDto.Password"
+                              Label="Password"
+                              Required="true"
+                              InputType="InputType.Password"
+                              RequiredError="Password is required!"/>
+            </MudForm>
+        </MudPaper>
+        <MudPaper Class="pa-4 mt-4 d-flex flex-row align-center justify-center mud-width-full">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true" OnClick="@HandleLogin">Login</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" DisableElevation="true" OnClick="@(() => _form.Reset())" Class="mx-2">Reset</MudButton>
+        </MudPaper>
+        @if (_showAlert)
+        {
+         <MudAlert Severity="Severity.Error">Log in failed!</MudAlert>
+        }
+    </MudItem>
+</MudGrid>
+
+
+@code {
+    bool _showAlert;
+    bool _success;
+    string[] _errors = { };
+    MudForm? _form;
+
+    public LoginUserDto _userLoginDto { get; set; } = new();
+    
+    async Task HandleLogin()
+    {
+        try
+        {
+            _showAlert = false;
+
+            Result<string> token = await Rest.ExecudeCommand(() => Refit.Login(_userLoginDto));
+            
+            if (token.IsFailed)
+            {
+                _showAlert = true;
+            }
+
+            var trimmed = token.Value.Trim('"');
+            await _localStorage.SetItemAsync("token", trimmed);
+            var state = await _authStateProvider.GetAuthenticationStateAsync();
+            
+            if (state.User.Identity.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/");
+            }
+
+            await _form.ResetAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+
+}
